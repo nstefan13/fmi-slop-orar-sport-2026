@@ -25,3 +25,8 @@ The raw data comes directly from timetable.html, which was parsed using a Python
 Distances were measured using the OpenStreetMap road network and the OSRM routing engine to get true street walking kilometers rather than straight-line approximations. Transit times and route descriptions are based on Bucharest metro line one and line three, tram lines one, ten, and eleven along Vasile Milea, and local buses like three hundred and thirty-six.
 
 The front end is built with standard HTML5, modern CSS, and vanilla JavaScript without any heavy framework overhead. The map is powered by Leaflet using vector-styled tiles from Esri and OpenStreetMap. All Leaflet script and stylesheet dependencies are stored locally in the assets folder so the application works smoothly even without external library CDNs.
+
+<!--- Sunt prea lenes sa scriu README. asta e prompt-ul folosit pentru a genera README-ul asta:
+ we are ready to push it to github. create a good readme: b1 lingo, no bullet points or marketing shit. the tone is that of a student sharing the app with fellow     
+  students. put a screenshot, document the tech and the features. here is the origin "https://github.com/nstefan13/fmi-slop-orar-sport-2026.git" 
+--->
