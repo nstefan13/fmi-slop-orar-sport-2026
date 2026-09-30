@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UB Sports Map & Timetable (DEFS 2026-2027)</title>
+  <link rel="stylesheet" href="assets/leaflet.css">
+  <link rel="stylesheet" href="app.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Fullscreen Map Container -->
+  <div id="map"></div>
+
+  <!-- Floating Navigation & Controls Header -->
+  <header class="top-header">
+    <div class="header-glass-bar">
+      <div class="brand-section">
+        <div class="brand-logo-badge">🏅</div>
+        <div class="brand-titles">
+          <h1>UB Sports Map <span class="academic-year">2026-2027</span></h1>
+          <p>Departamentul de Educație Fizică și Sport • Universitatea din București</p>
+        </div>
+      </div>
+
+      <!-- Quick Reference Origin Buttons -->
+      <div class="reference-summary">
+        <div class="ref-chip grozavesti" id="btn-focus-grozavesti" title="Click to center on Grozăvești A">
+          <span class="ref-dot"></span>
+          <span>🏠 Grozăvești A (Student House)</span>
+        </div>
+        <div class="ref-chip pbt" id="btn-focus-pbt" title="Click to center on Polytechnical Business Tower">
+          <span class="ref-dot"></span>
+          <span>🏢 Politehnica Business Tower (Courses)</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="action-btn" id="btn-toggle-sidebar" title="Toggle locations list">
+          <span>📋</span> <span class="btn-text">Locations</span>
+        </button>
+        <button class="action-btn primary" id="btn-open-timetable" title="Open full university timetable">
+          <span>📅</span> <span class="btn-text">Full Timetable</span>
+        </button>
+        <button class="action-btn" id="btn-reset-map" title="Reset map view to all pins">
+          <span>🗺️</span> <span class="btn-text">Reset View</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter and Search Bar -->
+    <div class="filter-bar">
+      <div class="search-box-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" class="search-input" placeholder="Search sport, professor, venue, or address...">
+      </div>
+
+      <div class="filter-group">
+
+        <select id="sort-select" class="filter-select">
+          <option value="default">Sort by: Default</option>
+          <option value="grozavesti">Proximity: Closest to Grozăvești A</option>
+          <option value="pbt">Proximity: Closest to Politehnica Tower</option>
+          <option value="name">Name (A-Z)</option>
+        </select>
+      </div>
+
+      <div class="day-pills" id="day-pills-container">
+        <button class="day-pill active" data-day="all">All Days</button>
+        <button class="day-pill" data-day="Luni">Luni</button>
+        <button class="day-pill" data-day="Marți">Marți</button>
+        <button class="day-pill" data-day="Miercuri">Miercuri</button>
+        <button class="day-pill" data-day="Joi">Joi</button>
+        <button class="day-pill" data-day="Vineri">Vineri</button>
+      </div>
+    </div>
+
+  </header>
+
+  <!-- Left Sidebar List (Collapsible) -->
+  <aside class="sidebar-panel" id="sidebar-panel">
+    <div class="sidebar-header">
+      <div class="sidebar-title">
+        <span>📍 Sports Locations</span>
+        <span class="badge-count" id="locations-count-badge">13 venues</span>
+      </div>
+      <button class="close-preview-btn" id="btn-close-sidebar" title="Collapse sidebar">✕</button>
+    </div>
+    <div class="locations-scroll-list" id="locations-list">
+      <!-- Populated via JavaScript -->
+    </div>
+  </aside>
+
+  <!-- Button to re-open sidebar when collapsed -->
+  <button class="sidebar-toggle-btn" id="btn-reopen-sidebar">
+    <span>📍</span> <span>Show Venues</span>
+  </button>
+
+  <!-- Floating Quick Preview Card (Top Right, updates on pin hover or selection) -->
+  <section class="quick-preview-panel hidden" id="preview-panel">
+    <div class="preview-header">
+      <div class="preview-title-box">
+        <h3 id="preview-title">Location Name</h3>
+        <div class="preview-subtitle">
+          <span id="preview-campus-badge" class="item-badge">Campus</span>
+          <span id="preview-facility-type">Facility Type</span>
+        </div>
+      </div>
+      <button class="close-preview-btn" id="btn-close-preview" title="Close card">✕</button>
+    </div>
+
+    <div class="preview-body">
+      <!-- Travel & Distance Comparison Grid -->
+      <div class="comparison-grid">
+        <!-- Card 1: To Grozăvești A -->
+        <div class="metric-card grozavesti">
+          <div class="metric-header">
+            <span>🏠 Grozăvești A</span>
+          </div>
+          <div class="metric-main-val">
+            <span id="preview-groz-dist">--</span>
+            <span class="metric-unit">km</span>
+          </div>
+          <div class="metric-sub-rows">
+            <div class="metric-sub-item">
+              <span>🚶 Mers pe jos:</span>
+              <span id="preview-groz-walk">-- min</span>
+            </div>
+            <div class="metric-sub-item">
+              <span>🚇 Transport public:</span>
+              <span id="preview-groz-transit">-- min</span>
+            </div>
+          </div>
+          <div class="route-desc-box" id="preview-groz-route">
+            Route info loading...
+          </div>
+        </div>
+
+        <!-- Card 2: To Polytechnical Business Tower -->
+        <div class="metric-card pbt">
+          <div class="metric-header">
+            <span>🏢 Politehnica Tower</span>
+          </div>
+          <div class="metric-main-val">
+            <span id="preview-pbt-dist">--</span>
+            <span class="metric-unit">km</span>
+          </div>
+          <div class="metric-sub-rows">
+            <div class="metric-sub-item">
+              <span>🚶 Mers pe jos:</span>
+              <span id="preview-pbt-walk">-- min</span>
+            </div>
+            <div class="metric-sub-item">
+              <span>🚌 Transport public:</span>
+              <span id="preview-pbt-transit">-- min</span>
+            </div>
+          </div>
+          <div class="route-desc-box" id="preview-pbt-route">
+            Route info loading...
+          </div>
+        </div>
+      </div>
+
+      <!-- Sports Offered Section with Multi-Select Schedule Filter -->
+      <div class="sports-section-box">
+        <div class="preview-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+          <span>🏅 Sports Available (Click to select & filter schedule):</span>
+          <button type="button" class="reset-sports-link hidden" id="btn-reset-venue-sports" title="Show all sports at this location">Reset / All</button>
+        </div>
+        <div class="sports-badge-container" id="preview-sports-container">
+          <!-- Populated dynamically with multi-select buttons -->
+        </div>
+      </div>
+
+      <!-- Hours & Schedule Section (Filtered by selected sports) -->
+      <div>
+        <div class="preview-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+          <span>⏰ Schedule & Hours (Orar pe zile)</span>
+          <span id="preview-schedule-filter-status" class="schedule-filter-status"></span>
+        </div>
+        <div class="schedule-group-container" id="preview-schedule-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="preview-footer-actions">
+        <a href="#" target="_blank" class="preview-action-btn nav" id="preview-nav-link">
+          <span>🗺️ Navigate (Google Maps)</span>
+        </a>
+        <button class="preview-action-btn full-table" id="preview-view-table-btn">
+          <span>📅 Full Timetable</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom Map Legend -->
+  <!-- Map Style Switcher (Bottom Right) -->
+  <div class="map-style-control" id="map-style-control">
+    <button class="style-btn active" data-style="streets">🗺️ Street</button>
+    <button class="style-btn" data-style="osm">🌍 OSM</button>
+    <button class="style-btn" data-style="satellite">🛰️ Satellite</button>
+  </div>
+
+  <div class="map-legend-pill">
+    <div class="legend-item">
+      <span class="legend-color-line groz"></span>
+      <span>Route to Grozăvești A</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-color-line pbt"></span>
+      <span>Route to Politehnica Tower</span>
+    </div>
+    <div class="legend-item" style="color: var(--text-muted); font-size: 11px;">
+      <span>💡 Hover any pin to inspect travel times & schedule</span>
+    </div>
+  </div>
+
+  <!-- Full Timetable Modal -->
+  <div class="modal-overlay" id="timetable-modal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2>
+          <span>📅</span>
+          <span>Orar Educație Fizică & Sport — Universitatea din București (2026-2027)</span>
+        </h2>
+        <button class="modal-close-btn" id="btn-close-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <table class="timetable-table" id="modal-timetable">
+          <thead>
+            <tr>
+              <th style="width: 18%;">Locație</th>
+              <th style="width: 10%;">Ziua</th>
+              <th style="width: 14%;">Interval Orar</th>
+              <th style="width: 18%;">Sport / Disciplină</th>
+              <th style="width: 25%;">Profesor / Detalii</th>
+              <th style="width: 15%;">Distanțe</th>
+            </tr>
+          </thead>
+          <tbody id="modal-timetable-tbody">
+            <!-- Populated via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets/leaflet.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
